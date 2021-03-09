@@ -1,0 +1,195 @@
+import copy
+
+def print_square(grid,r,c):
+    print(grid[r][c])
+
+def sudoku_builder(string):
+    # enter integers from left to right, top to bottom
+    # as a string e.g. '910023...'
+
+    grid = []
+
+    for f in range(9):
+        semi = []
+        for s in range(9):
+            semi.append(int(string[-1]))
+            string = string[:-1]
+        grid.append(semi)
+
+    return grid
+
+def sudoku_print(grid):
+    row_list = []
+    for i in range(9):
+        row_list.append(i + 1)
+
+    print(" " + str(row_list))
+
+    column = 1
+
+    for row in range(len(grid)):
+        print(str(column) + str(grid[row]))
+        column += 1
+
+    # simple print
+    # for row in range(len(grid)):
+    #     print(grid[row])
+
+
+def row_id(grid):
+    rows = []
+
+    for n in range(len(grid)):
+        rows.append(grid[n])
+
+    return rows
+
+
+def col_id(grid):
+    cols = []
+
+    for s in range(len(grid)):
+        col = []
+        for n in range(len(grid)):
+            col.append(grid[n][s])
+        cols.append(col)
+
+    return cols
+
+
+def box_id(grid):
+    boxes = []
+
+    for sec_r in range(3):
+        for sec_c in range(3):
+            box_coords = []
+            for s in range(3):
+                for n in range(3):
+                    box_coords.append(grid[s+(sec_r*3)][n+(sec_c*3)])
+            boxes.append(box_coords)
+
+    return boxes
+
+def box_finder(r,c):
+    if 0 <= r < 3:
+        return c // 3
+    elif 3 <= r < 6:
+        return (c // 3) + 3
+    else:
+        return (c // 3) + 6
+
+
+def first_nec(grid, save_grids, stack):
+    # will impute values based on row/column/box necessity rule
+    # will scroll through each square to determine if only one
+    # value is possible, and if so, will impute that value
+    # will stop running when all possible values have been imputed
+
+    flash_grid = []
+
+    while flash_grid != grid:
+        flash_grid = copy.deepcopy(grid)
+
+        rows = row_id(grid)
+        cols = col_id(grid)
+        boxes = box_id(grid)
+
+        for r in range(len(grid)):
+            for c in range(len(grid)):
+                if grid[r][c] == 0:
+                    check = []
+                    for i in range(1,10):
+                        if i not in rows[r] and i not in cols[c] and i not in boxes[box_finder(r,c)]:
+                            check.append(i)
+                    if len(check) == 1:
+                        grid[r][c] = check[0]
+                    if len(check) == 0:
+                        hypo(grid, True, save_grids, stack)
+
+    if sol_checker(grid) == True:
+        sudoku_print(grid)
+        exit()
+
+    hypo(grid, False, save_grids, stack)
+
+def hypo(grid, contra, save_grids, stack):
+
+    if contra == True:
+        # print(len(save_grids))
+        # print(len(stack))
+        # print(stack[-1])
+        grid = copy.deepcopy(save_grids[-1])
+        # stack[-1].pop()
+        if stack[-1] == []:
+            stack.pop()
+            save_grids.pop()
+
+    # if contra == True:
+    #     print("contradiction found")
+    # else:
+    #     print("no contradiction")
+
+    rows = row_id(grid)
+    cols = col_id(grid)
+    boxes = box_id(grid)
+
+
+    for r in range(9):
+        for c in range(9):
+            if grid[r][c] == 0:
+                if contra == False:
+                    check = []
+                    for i in range(1, 10):
+                        if i not in rows[r] and i not in cols[c] and i not in boxes[box_finder(r, c)]:
+                            check.append(i)
+
+                    stack.append(check)
+                    save_grids.append(copy.deepcopy(grid))
+
+                # print("stack length", len(stack))
+                # print("save_grids length", len(save_grids))
+                # print("stack", stack)
+                # print("last value in stack", stack[-1])
+                # print("sudoku coords", r+1,",",c+1)
+
+
+                grid[r][c] = stack[-1].pop()
+
+                if stack[-1] == []:
+                    stack.pop()
+                    save_grids.pop()
+
+                # print("stack", stack)
+                # print("stack length", len(stack))
+                # print("save_grids length", len(save_grids))
+                #
+                # print('------')
+
+                first_nec(grid, save_grids, stack)
+
+
+
+def sol_checker(grid):
+    for n in range(9):
+        if 0 in grid[n]:
+            return False
+
+    return True
+
+grid = [
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0],
+        ]
+
+# grid = sudoku_builder(string)
+
+save_grids = []
+stack = []
+first_nec(grid, save_grids, stack)
